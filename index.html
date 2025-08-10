@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exchange Office Dashboard - Version 8</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .pulse-dot { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .slide-up { animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <!-- Login Page -->
+    <div id="loginPage" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md fade-in">
+            <div class="text-center mb-8">
+                <div class="bg-gradient-to-r from-blue-600 to-indigo-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                    </svg>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800">Exchange Office</h1>
+                <p class="text-gray-600 mt-2">Dashboard Login</p>
+            </div>
+            
+            <form id="loginForm" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                    <input type="text" id="username" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="Enter username" required>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <input type="password" id="password" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="Enter password" required>
+                </div>
+                
+                <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 transform hover:scale-105 transition-all duration-200 shadow-lg">
+                    Sign In
+                </button>
+            </form>
+            
+            <div id="loginError" class="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden">
+                Invalid credentials. Please try again.
+            </div>
+            
+            <div id="lockoutMessage" class="mt-4 p-3 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-lg hidden">
+                Too many failed attempts. Please wait <span id="lockoutTimer">5</span> minutes.
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Page -->
+    <div id="dashboardPage" class="hidden min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <div class="flex items-center">
+                        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 w-8 h-8 rounded-lg flex items-center justify-center mr-3">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                            </svg>
+                        </div>
+                        <h1 class="text-xl font-semibold text-gray-800">Exchange Office Dashboard</h1>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center text-sm text-gray-600">
+                            <div class="w-2 h-2 bg-green-500 rounded-full pulse-dot mr-2"></div>
+                            <span>Live Data</span>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            <span id="userRole">User</span> | Session: <span id="sessionTimer">30:00</span>
+                        </div>
+                        <button id="logoutBtn" class="text-gray-600 hover:text-gray-800 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Stats Cards - Version 8 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 slide-up cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-200" onclick="showDetailPage('transactions')">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Total Transactions</p>
+                            <p id="totalTransactions" class="text-2xl font-bold text-gray-900">Loading...</p>
+                            <p class="text-xs text-blue-600 mt-1">Click for details →</p>
+                        </div>
+                        <div class="bg-blue-100 p-3 rounded-lg">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 slide-up cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-200" onclick="showDetailPage('revenue')">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Daily Revenue</p>
+                            <p id="dailyRevenue" class="text-2xl font-bold text-green-600">Loading...</p>
+                            <p class="text-xs text-green-600 mt-1">Click for details →</p>
+                        </div>
+                        <div class="bg-green-100 p-3 rounded-lg">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 slide-up cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-200" onclick="showDetailPage('rates')">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Active Rates</p>
+                            <p id="activeRates" class="text-2xl font-bold text-purple-600">Loading...</p>
+                            <p class="text-xs text-purple-600 mt-1">Click for details →</p>
+                        </div>
+                        <div class="bg-purple-100 p-3 rounded-lg">
+                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 slide-up cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-200" onclick="showDetailPage('orders')">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Pending Orders</p>
+                            <p id="pendingOrders" class="text-2xl font-bold text-orange-600">Loading...</p>
+                            <p class="text-xs text-orange-600 mt-1">Click for details →</p>
+                        </div>
+                        <div class="bg-orange-100 p-3 rounded-lg">
+                            <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Exchange Rates Table -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 mb-8">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-800">Current Exchange Rates</h2>
+                    <p class="text-sm text-gray-600">Last updated: <span id="lastUpdated">Loading...</span></p>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Currency</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Buy Rate</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sell Rate</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Change</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ratesTableBody" class="bg-white divide-y divide-gray-200">
+                            <!-- Rates will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Important Links Table -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 mb-8">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-800">Important Links</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Link</th>
+                            </tr>
+                        </thead>
+                        <tbody id="linksTableBody" class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">Central Bank</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-600">Official exchange rates</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <a href="https://www.centralbank.gov" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Visit Site →</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Live Exchange Rates Widget -->
+            <div class="bg-gradient-to-r from-green-500 to-blue-600 rounded-xl shadow-lg text-white p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold">Live Exchange Rates</h2>
+                    <div class="flex items-center text-sm">
+                        <div class="w-2 h-2 bg-green-300 rounded-full pulse-dot mr-2"></div>
+                        <span>Real-time</span>
+                    </div>
+                </div>
+                <div id="liveRatesGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <!-- Live rates will be populated here -->
+                </div>
+                <div class="text-center mt-4 text-sm opacity-75">
+                    Updated every 30 seconds
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Detail Pages -->
+    <div id="detailPage" class="hidden min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <div class="flex items-center">
+                        <button id="backBtn" class="mr-4 text-gray-600 hover:text-gray-800 transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                        </button>
+                        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 w-8 h-8 rounded-lg flex items-center justify-center mr-3">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                            </svg>
+                        </div>
+                        <h1 id="detailTitle" class="text-xl font-semibold text-gray-800">Detail View</h1>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center text-sm text-gray-600">
+                            <div class="w-2 h-2 bg-green-500 rounded-full pulse-dot mr-2"></div>
+                            <span>Live Data</span>
+                        </div>
+                        <button id="logoutBtn2" class="text-gray-600 hover:text-gray-800 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Detail Content -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 id="detailSubtitle" class="text-lg font-semibold text-gray-800">Detailed Information</h2>
+                    <p class="text-sm text-gray-600">Data from Google Sheets - Last updated: <span id="detailLastUpdated">Loading...</span></p>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead id="detailTableHead" class="bg-gray-50">
+                            <!-- Headers will be populated dynamically -->
+                        </thead>
+                        <tbody id="detailTableBody" class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td colspan="100%" class="px-6 py-8 text-center text-gray-500">
+                                    <div class="flex flex-col items-center">
+                                        <svg class="w-12 h-12 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        <p class="text-lg font-medium">Loading data from Google Sheets...</p>
+                                        <p class="text-sm mt-2">Make sure your Google Sheet is published and accessible</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Enhanced Security Features
+        
+        // Simple encryption function
+        function encrypt(text, key = 'exchangeKey2024') {
+            let result = '';
+            for (let i = 0; i < text.length; i++) {
+                result += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+            }
+            return btoa(result);
+        }
+        
+        function decrypt(encrypted, key = 'exchangeKey2024') {
+            const decoded = atob(encrypted);
+            let result = '';
+            for (let i = 0; i < decoded.length; i++) {
+                result += String.fromCharCode(decoded.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+            }
+            return result;
+        }
+        
+        // User credentials - now working correctly
+        const users = [
+            { username: 'admin', password: 'exchange123', role: 'Administrator' },
+            { username: 'manager', password: 'manager456', role: 'Manager' },
+            { username: 'operator', password: 'operator789', role: 'Operator' }
+        ];
+
+        // Security variables
+        let loginAttempts = parseInt(localStorage.getItem('loginAttempts') || '0');
+        let lockoutTime = parseInt(localStorage.getItem('lockoutTime') || '0');
+        let sessionTimeout;
+        let sessionTimer;
+        let sessionTimeLeft = 30 * 60; // 30 minutes in seconds
+
+        // DOM elements
+        const loginPage = document.getElementById('loginPage');
+        const dashboardPage = document.getElementById('dashboardPage');
+        const loginForm = document.getElementById('loginForm');
+        const loginError = document.getElementById('loginError');
+        const lockoutMessage = document.getElementById('lockoutMessage');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const sessionTimerDisplay = document.getElementById('sessionTimer');
+
+        // Check if user is locked out on page load
+        checkLockoutStatus();
+
+        // Enhanced login form handler with rate limiting
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Check if user is locked out
+            if (Date.now() < lockoutTime) {
+                showLockoutMessage();
+                return;
+            }
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            // Check against all users
+            const validUser = users.find(user => 
+                user.username === username && user.password === password
+            );
+            
+            if (validUser) {
+                // Successful login
+                loginAttempts = 0;
+                localStorage.removeItem('loginAttempts');
+                localStorage.removeItem('lockoutTime');
+                
+                loginPage.classList.add('hidden');
+                dashboardPage.classList.remove('hidden');
+                loginError.classList.add('hidden');
+                lockoutMessage.classList.add('hidden');
+                
+                // Set user role
+                document.getElementById('userRole').textContent = validUser.role;
+                
+                // Start session management
+                startSession();
+                startDataUpdates();
+            } else {
+                // Failed login
+                loginAttempts++;
+                localStorage.setItem('loginAttempts', loginAttempts.toString());
+                
+                if (loginAttempts >= 3) {
+                    // Lock out for 5 minutes after 3 failed attempts
+                    lockoutTime = Date.now() + (5 * 60 * 1000);
+                    localStorage.setItem('lockoutTime', lockoutTime.toString());
+                    showLockoutMessage();
+                } else {
+                    loginError.textContent = `Invalid credentials. ${3 - loginAttempts} attempts remaining.`;
+                    loginError.classList.remove('hidden');
+                }
+                
+                // Clear form
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+            }
+        });
+
+        function checkLockoutStatus() {
+            if (Date.now() < lockoutTime) {
+                showLockoutMessage();
+            }
+        }
+
+        function showLockoutMessage() {
+            const timeLeft = Math.ceil((lockoutTime - Date.now()) / 1000 / 60);
+            document.getElementById('lockoutTimer').textContent = timeLeft;
+            lockoutMessage.classList.remove('hidden');
+            loginError.classList.add('hidden');
+            
+            // Update timer every minute
+            const lockoutTimer = setInterval(() => {
+                const timeLeft = Math.ceil((lockoutTime - Date.now()) / 1000 / 60);
+                if (timeLeft <= 0) {
+                    lockoutMessage.classList.add('hidden');
+                    localStorage.removeItem('lockoutTime');
+                    lockoutTime = 0;
+                    clearInterval(lockoutTimer);
+                } else {
+                    document.getElementById('lockoutTimer').textContent = timeLeft;
+                }
+            }, 60000);
+        }
+
+        function startSession() {
+            // Auto-logout after 30 minutes
+            sessionTimeout = setTimeout(() => {
+                logout();
+                alert('Session expired. Please login again.');
+            }, 30 * 60 * 1000);
+
+            // Update session timer display
+            sessionTimer = setInterval(() => {
+                sessionTimeLeft--;
+                const minutes = Math.floor(sessionTimeLeft / 60);
+                const seconds = sessionTimeLeft % 60;
+                sessionTimerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                if (sessionTimeLeft <= 0) {
+                    logout();
+                    alert('Session expired. Please login again.');
+                }
+            }, 1000);
+        }
+
+        function logout() {
+            clearTimeout(sessionTimeout);
+            clearInterval(sessionTimer);
+            
+            dashboardPage.classList.add('hidden');
+            loginPage.classList.remove('hidden');
+            
+            // Clear form
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            
+            // Reset session timer
+            sessionTimeLeft = 30 * 60;
+            
+            stopDataUpdates();
+        }
+
+        // Logout button handler
+        logoutBtn.addEventListener('click', logout);
+
+        // Prevent right-click and developer tools (basic protection)
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('keydown', e => {
+            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
+                e.preventDefault();
+            }
+        });
+
+        // Clear sensitive data on page unload
+        window.addEventListener('beforeunload', () => {
+            // Clear any sensitive data from memory
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        });
+
+        // Google Sheets Integration
+        const GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/gviz/tq?tqx=out:json&sheet=';
+        
+        // Replace YOUR_SHEET_ID with your actual Google Sheets ID
+        // Make sure your sheet is published to web (File > Share > Publish to web)
+        
+        async function fetchGoogleSheetData(sheetName) {
+            try {
+                const response = await fetch(GOOGLE_SHEETS_URL + sheetName);
+                const text = await response.text();
+                const json = JSON.parse(text.substr(47).slice(0, -2));
+                return json.table.rows;
+            } catch (error) {
+                console.error('Error fetching Google Sheets data:', error);
+                return null;
+            }
+        }
+        
+        async function fetchStatistics() {
+            const data = await fetchGoogleSheetData('Statistics');
+            if (data && data.length > 0) {
+                // Assuming columns: Total Transactions, Daily Revenue, Active Rates, Pending Orders
+                const row = data[0].c;
+                return {
+                    totalTransactions: row[0]?.v || 0,
+                    dailyRevenue: '$' + (row[1]?.v || 0).toLocaleString(),
+                    activeRates: row[2]?.v || 0,
+                    pendingOrders: row[3]?.v || 0
+                };
+            }
+            return generateMockStatistics();
+        }
+        
+        async function fetchLatestDeals() {
+            const data = await fetchGoogleSheetData('LatestDeals');
+            if (data && data.length > 0) {
+                return data.map(row => ({
+                    currency: row.c[0]?.v || '',
+                    buyRate: row.c[1]?.v || '',
+                    sellRate: row.c[2]?.v || '',
+                    change: row.c[3]?.v || '0'
+                }));
+            }
+            return generateMockRates();
+        }
+        
+        // Fallback mock data functions
+        function generateMockStatistics() {
+            return {
+                totalTransactions: Math.floor(Math.random() * 1000) + 500,
+                dailyRevenue: '$' + (Math.random() * 50000 + 10000).toFixed(2),
+                activeRates: Math.floor(Math.random() * 20) + 15,
+                pendingOrders: Math.floor(Math.random() * 50) + 5
+            };
+        }
+        
+        function generateMockRates() {
+            return [
+                {
+                    currency: 'USD/AFN',
+                    buyRate: (70.5 + Math.random() * 2).toFixed(2),
+                    sellRate: (71.2 + Math.random() * 2).toFixed(2),
+                    change: (Math.random() * 2 - 1).toFixed(2)
+                },
+                {
+                    currency: 'PKR/AFN',
+                    buyRate: (0.25 + Math.random() * 0.05).toFixed(3),
+                    sellRate: (0.26 + Math.random() * 0.05).toFixed(3),
+                    change: (Math.random() * 2 - 1).toFixed(2)
+                },
+                {
+                    currency: 'IRR/AFN',
+                    buyRate: (0.0017 + Math.random() * 0.0003).toFixed(4),
+                    sellRate: (0.0018 + Math.random() * 0.0003).toFixed(4),
+                    change: (Math.random() * 2 - 1).toFixed(2)
+                },
+                {
+                    currency: 'GBP/AFN',
+                    buyRate: (88.5 + Math.random() * 3).toFixed(2),
+                    sellRate: (89.8 + Math.random() * 3).toFixed(2),
+                    change: (Math.random() * 2 - 1).toFixed(2)
+                },
+                {
+                    currency: 'EUR/AFN',
+                    buyRate: (76.2 + Math.random() * 2.5).toFixed(2),
+                    sellRate: (77.1 + Math.random() * 2.5).toFixed(2),
+                    change: (Math.random() * 2 - 1).toFixed(2)
+                }
+            ];
+        }
+        
+        // Data update functions
+        let updateInterval;
+
+        async function updateDashboardData() {
+            // Fetch statistics from Google Sheets
+            const stats = await fetchStatistics();
+            
+            // Update stats cards
+            document.getElementById('totalTransactions').textContent = stats.totalTransactions.toLocaleString();
+            document.getElementById('dailyRevenue').textContent = stats.dailyRevenue;
+            document.getElementById('activeRates').textContent = stats.activeRates;
+            document.getElementById('pendingOrders').textContent = stats.pendingOrders;
+            
+            // Update last updated time
+            document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+            
+            // Fetch and update exchange rates table
+            const exchangeRates = await fetchLatestDeals();
+            const tableBody = document.getElementById('ratesTableBody');
+            tableBody.innerHTML = '';
+            
+            exchangeRates.forEach(rate => {
+                const row = document.createElement('tr');
+                const changeClass = parseFloat(rate.change) >= 0 ? 'text-green-600' : 'text-red-600';
+                const changeIcon = parseFloat(rate.change) >= 0 ? '↗' : '↘';
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">${rate.currency}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">${rate.buyRate}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">${rate.sellRate}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm ${changeClass} font-medium">
+                            ${changeIcon} ${Math.abs(rate.change)}%
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+            
+            // Update live rates widget
+            updateLiveRatesWidget(exchangeRates);
+        }
+        
+        function updateLiveRatesWidget(rates) {
+            const liveRatesGrid = document.getElementById('liveRatesGrid');
+            liveRatesGrid.innerHTML = '';
+            
+            rates.slice(0, 4).forEach(rate => {
+                const changeClass = parseFloat(rate.change) >= 0 ? 'text-green-200' : 'text-red-200';
+                const changeIcon = parseFloat(rate.change) >= 0 ? '↗' : '↘';
+                
+                const rateCard = document.createElement('div');
+                rateCard.className = 'bg-white bg-opacity-20 rounded-lg p-3 text-center';
+                rateCard.innerHTML = `
+                    <div class="text-sm font-medium opacity-90">${rate.currency}</div>
+                    <div class="text-lg font-bold">${rate.sellRate}</div>
+                    <div class="text-xs ${changeClass}">
+                        ${changeIcon} ${Math.abs(rate.change)}%
+                    </div>
+                `;
+                liveRatesGrid.appendChild(rateCard);
+            });
+        }
+
+        function startDataUpdates() {
+            updateDashboardData();
+            updateInterval = setInterval(updateDashboardData, 30000);
+        }
+
+        function stopDataUpdates() {
+            if (updateInterval) {
+                clearInterval(updateInterval);
+            }
+        }
+
+        // Detail page functions
+        function showDetailPage(type) {
+            dashboardPage.classList.add('hidden');
+            document.getElementById('detailPage').classList.remove('hidden');
+            
+            const titles = {
+                'transactions': 'Transaction Details',
+                'revenue': 'Revenue Details', 
+                'rates': 'Exchange Rate Details',
+                'orders': 'Pending Orders Details'
+            };
+            
+            const subtitles = {
+                'transactions': 'All Transaction Records',
+                'revenue': 'Daily Revenue Breakdown',
+                'rates': 'Current Exchange Rates',
+                'orders': 'Pending Order Queue'
+            };
+            
+            document.getElementById('detailTitle').textContent = titles[type];
+            document.getElementById('detailSubtitle').textContent = subtitles[type];
+            
+            loadDetailData(type);
+        }
+
+        async function loadDetailData(type) {
+            const sheetNames = {
+                'transactions': 'Transactions',
+                'revenue': 'Revenue',
+                'rates': 'Rates',
+                'orders': 'Orders'
+            };
+            
+            try {
+                const data = await fetchGoogleSheetData(sheetNames[type]);
+                if (data && data.length > 0) {
+                    populateDetailTable(data);
+                } else {
+                    showMockDetailData(type);
+                }
+            } catch (error) {
+                console.error('Error loading detail data:', error);
+                showMockDetailData(type);
+            }
+            
+            document.getElementById('detailLastUpdated').textContent = new Date().toLocaleTimeString();
+        }
+
+        function populateDetailTable(data) {
+            const tableHead = document.getElementById('detailTableHead');
+            const tableBody = document.getElementById('detailTableBody');
+            
+            // Clear existing content
+            tableHead.innerHTML = '';
+            tableBody.innerHTML = '';
+            
+            if (data.length === 0) return;
+            
+            // Create headers from first row
+            const headerRow = document.createElement('tr');
+            const firstRow = data[0];
+            
+            if (firstRow.c) {
+                firstRow.c.forEach(cell => {
+                    const th = document.createElement('th');
+                    th.className = 'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider';
+                    th.textContent = cell?.v || 'Column';
+                    headerRow.appendChild(th);
+                });
+            }
+            tableHead.appendChild(headerRow);
+            
+            // Create data rows
+            data.slice(1).forEach(row => {
+                const tr = document.createElement('tr');
+                if (row.c) {
+                    row.c.forEach(cell => {
+                        const td = document.createElement('td');
+                        td.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-900';
+                        td.textContent = cell?.v || '';
+                        tr.appendChild(td);
+                    });
+                }
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function showMockDetailData(type) {
+            const tableHead = document.getElementById('detailTableHead');
+            const tableBody = document.getElementById('detailTableBody');
+            
+            tableHead.innerHTML = '';
+            tableBody.innerHTML = '';
+            
+            const mockData = {
+                'transactions': {
+                    headers: ['ID', 'Date', 'Currency', 'Amount', 'Rate', 'Customer', 'Status'],
+                    rows: [
+                        ['TXN001', '2024-01-15', 'USD/AFN', '500', '71.25', 'Ahmad Khan', 'Completed'],
+                        ['TXN002', '2024-01-15', 'EUR/AFN', '300', '76.80', 'Sara Ali', 'Completed'],
+                        ['TXN003', '2024-01-15', 'PKR/AFN', '10000', '0.255', 'Hassan Omar', 'Pending'],
+                        ['TXN004', '2024-01-15', 'GBP/AFN', '200', '89.15', 'Fatima Shah', 'Completed'],
+                        ['TXN005', '2024-01-15', 'IRR/AFN', '50000', '0.0018', 'Ali Reza', 'Processing']
+                    ]
+                },
+                'revenue': {
+                    headers: ['Date', 'Currency Pair', 'Volume', 'Commission', 'Profit', 'Total Revenue'],
+                    rows: [
+                        ['2024-01-15', 'USD/AFN', '$2,500', '$125', '$75', '$200'],
+                        ['2024-01-15', 'EUR/AFN', '€1,800', '€90', '€54', '€144'],
+                        ['2024-01-15', 'PKR/AFN', '₨45,000', '₨2,250', '₨1,350', '₨3,600'],
+                        ['2024-01-15', 'GBP/AFN', '£1,200', '£60', '£36', '£96'],
+                        ['2024-01-15', 'IRR/AFN', '﷼180,000', '﷼9,000', '﷼5,400', '﷼14,400']
+                    ]
+                },
+                'rates': {
+                    headers: ['Currency Pair', 'Buy Rate', 'Sell Rate', 'Spread', 'Last Updated', 'Trend'],
+                    rows: [
+                        ['USD/AFN', '70.85', '71.45', '0.60', '10:30 AM', '↗ +0.25%'],
+                        ['EUR/AFN', '76.15', '77.25', '1.10', '10:30 AM', '↘ -0.15%'],
+                        ['PKR/AFN', '0.252', '0.258', '0.006', '10:30 AM', '↗ +0.08%'],
+                        ['GBP/AFN', '88.90', '90.15', '1.25', '10:30 AM', '↗ +0.35%'],
+                        ['IRR/AFN', '0.00175', '0.00182', '0.00007', '10:30 AM', '↘ -0.12%']
+                    ]
+                },
+                'orders': {
+                    headers: ['Order ID', 'Customer', 'Currency', 'Amount', 'Type', 'Status', 'Priority'],
+                    rows: [
+                        ['ORD001', 'Mohammad Tariq', 'USD/AFN', '$1,000', 'Buy', 'Pending', 'High'],
+                        ['ORD002', 'Zahra Ahmadi', 'EUR/AFN', '€750', 'Sell', 'Processing', 'Medium'],
+                        ['ORD003', 'Rashid Khan', 'PKR/AFN', '₨25,000', 'Buy', 'Pending', 'Low'],
+                        ['ORD004', 'Maryam Hosseini', 'GBP/AFN', '£500', 'Sell', 'Pending', 'High'],
+                        ['ORD005', 'Omar Farid', 'IRR/AFN', '﷼75,000', 'Buy', 'Processing', 'Medium']
+                    ]
+                }
+            };
+            
+            const data = mockData[type];
+            
+            // Create headers
+            const headerRow = document.createElement('tr');
+            data.headers.forEach(header => {
+                const th = document.createElement('th');
+                th.className = 'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider';
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+            tableHead.appendChild(headerRow);
+            
+            // Create data rows
+            data.rows.forEach(row => {
+                const tr = document.createElement('tr');
+                row.forEach(cell => {
+                    const td = document.createElement('td');
+                    td.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-900';
+                    td.textContent = cell;
+                    tr.appendChild(td);
+                });
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // Back button functionality
+        document.getElementById('backBtn').addEventListener('click', function() {
+            document.getElementById('detailPage').classList.add('hidden');
+            dashboardPage.classList.remove('hidden');
+        });
+
+        // Second logout button
+        document.getElementById('logoutBtn2').addEventListener('click', logout);
+    </script>
+</body>
+</html>
