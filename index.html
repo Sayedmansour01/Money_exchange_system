@@ -289,69 +289,82 @@
             refreshInterval = setInterval(fetchSheetData, 5000);
         }
 
-        // Fetch data from Google Sheets (no API key needed!)
         async function fetchSheetData() {
-            try {
-                // Using CSV export method - no API key required!
-                const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_CONFIG.sheetId}/gviz/tq?tqx=out:csv&sheet=${SHEET_CONFIG.sheetName}`;
-                
-                const response = await fetch(csvUrl);
-                const csvText = await response.text();
-                
-                // Parse CSV data
-                const rows = csvText.split('\n').map(row => {
-                    // Simple CSV parsing (handles quoted fields)
-                    const result = [];
-                    let current = '';
-                    let inQuotes = false;
-                    
-                    for (let i = 0; i < row.length; i++) {
-                        const char = row[i];
-                        if (char === '"') {
-                            inQuotes = !inQuotes;
-                        } else if (char === ',' && !inQuotes) {
-                            result.push(current.replace(/"/g, ''));
-                            current = '';
-                        } else {
-                            current += char;
-                        }
-                    }
-                    result.push(current.replace(/"/g, ''));
-                    return result;
-                });
-                
-                // Skip header row and process data
-                debtData = rows.slice(1).map(row => ({
-                    name: row[0] || '',
-                    amount: parseFloat(row[1].toString().replace(/[$,]/g, '')) || 0, // Remove $ and commas
-                    lastDate: row[2] || ''
-                })).filter(item => item.name && item.amount > 0); // Filter out empty/invalid rows
-                
-                console.log('Raw CSV response:', csvText);
-                console.log('Parsed rows:', rows);
-                console.log('Final debt data:', debtData);
-                
-                // Use actual data from Google Sheets (no demo data)
-                updateDashboard();
-                updateLastUpdated();
-                
-            } catch (error) {
-                console.error('Error fetching sheet data:', error);
-                console.error('Full error details:', error);
-                
-                // Show error message in table
-                debtTableBody.innerHTML = `
-                    <tr>
-                        <td colspan="3" class="px-6 py-8 text-center text-red-500">
-                            <svg class="w-12 h-12 mx-auto mb-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                            </svg>
-                            Error loading data from Google Sheets. Please check if the sheet is public and the Sheet ID is correct.
-                        </td>
-                    </tr>
-                `;
+    try {
+        const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_CONFIG.sheetId}/gviz/tq?tqx=out:csv&sheet=${SHEET_CONFIG.sheetName}`;
+        const response = await fetch(csvUrl);
+        const csvText = await response.text();
+
+        // Parse CSV into rows/columns
+        const rows = csvText.split('\n').map(r => {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            for (let i = 0; i < r.length; i++) {
+                const char = r[i];
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.replace(/"/g, '').trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
             }
+            result.push(current.replace(/"/g, '').trim());
+            return result;
+        });
+
+        // First row = names
+        const names = rows[0].filter(n => n.trim() !== '');
+        const groupedData = {};
+
+        // Initialize groups
+        names.forEach(name => groupedData[name] = []);
+
+        // Go through each column and collect amounts (skip blanks)
+        for (let rowIndex = 1; rowIndex < rows.length; rowIndex++) {
+            let rowIsEmpty = true;
+            rows[rowIndex].forEach((value, colIndex) => {
+                const name = names[colIndex];
+                if (name && value.trim() !== '') {
+                    const amount = parseFloat(value.replace(/[$,]/g, '')) || 0;
+                    if (!isNaN(amount) && amount > 0) {
+                        groupedData[name].push(amount);
+                        rowIsEmpty = false;
+                    }
+                }
+            });
+            // Skip the row entirely if it had no valid amounts
+            if (rowIsEmpty) continue;
         }
+
+        // Convert to debtData array
+        debtData = [];
+        Object.keys(groupedData).forEach(name => {
+            groupedData[name].forEach(amount => {
+                debtData.push({ name, amount, lastDate: '' });
+            });
+        });
+
+        updateDashboard();
+        updateLastUpdated();
+
+    } catch (error) {
+        console.error('Error fetching sheet data:', error);
+        debtTableBody.innerHTML = `
+            <tr>
+                <td colspan="3" class="px-6 py-8 text-center text-red-500">
+                    <svg class="w-12 h-12 mx-auto mb-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>
+                    Error loading data from Google Sheets.
+                </td>
+            </tr>
+        `;
+    }
+}
+
 
 
 
@@ -467,3 +480,4 @@ function updateTable() {
     </script>
 </body>
 </html>
+
