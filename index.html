@@ -1,462 +1,359 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Debt Management Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        
-        .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        
-        .card-shadow {
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-        
-        .pulse-animation {
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-        
-        .slide-in {
-            animation: slideIn 0.5s ease-out;
-        }
-        
-        @keyframes slideIn {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        
-        .status-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 8px;
-        }
-        
-        .status-active { background-color: #10b981; }
-        .status-warning { background-color: #f59e0b; }
-        .status-critical { background-color: #ef4444; }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Live Google Sheets Dashboard</title>
+
+  <!-- Inter font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind (Play CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --font-inter: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; }
+    html,body{font-family:var(--font-inter);}
+    /* subtle gradient background */
+    body{background:linear-gradient(135deg,#eef2ff 0%, #dbeafe 100%);}
+  </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <!-- Login Page -->
-    <div id="loginPage" class="min-h-screen gradient-bg flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl card-shadow p-8 w-full max-w-md slide-in">
-            <div class="text-center mb-8">
-                <div class="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                </div>
-                <h1 class="text-2xl font-bold text-gray-900 mb-2">Debt Management System</h1>
-                <p class="text-gray-600">Please sign in to access the dashboard</p>
-            </div>
-            
-            <form id="loginForm" class="space-y-6">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
-                    <input type="text" id="username" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" placeholder="Enter your username" required>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                    <input type="password" id="password" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" placeholder="Enter your password" required>
-                </div>
-                
-                <button type="submit" class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors font-medium">
-                    Sign In
-                </button>
-                
-                <div id="loginError" class="hidden text-red-600 text-sm text-center bg-red-50 p-3 rounded-lg">
-                    Invalid username or password. Please try again.
-                </div>
-            </form>
-            
-            <div class="mt-6 p-4 bg-blue-50 rounded-lg">
-                <p class="text-sm text-blue-800 font-medium">Demo Credentials:</p>
-                <p class="text-sm text-blue-700">Username: admin</p>
-                <p class="text-sm text-blue-700">Password: dashboard123</p>
-            </div>
+<body class="min-h-screen flex items-center justify-center p-6">
+
+  <!-- Login wrapper and dashboard share the same container; toggled by JS -->
+  <div id="app" class="w-full max-w-5xl">
+
+    <!-- LOGIN -->
+    <section id="login" class="max-w-md mx-auto bg-white/90 rounded-2xl shadow-2xl p-8">
+      <h2 class="text-2xl font-semibold text-slate-800 mb-2">Dashboard Login</h2>
+      <p class="text-sm text-slate-500 mb-6">Sign in to view live data from Google Sheets.</p>
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label class="block text-sm text-slate-600 mb-1">Username</label>
+          <input id="username" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="admin" autocomplete="username" />
         </div>
-    </div>
+        <div>
+          <label class="block text-sm text-slate-600 mb-1">Password</label>
+          <input id="password" type="password" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="••••••" autocomplete="current-password" />
+        </div>
+        <div id="authError" class="text-sm text-red-600" style="display:none"></div>
+        <button type="submit" class="w-full py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-blue-500 text-white font-semibold shadow">Sign in</button>
+        <div class="text-xs text-slate-400 mt-2">Use username <code class="bg-slate-100 px-1 rounded">admin</code> and password <code class="bg-slate-100 px-1 rounded">debt123</code></div>
+      </form>
+    </section>
 
-    <!-- Dashboard Page -->
-    <div id="dashboardPage" class="hidden min-h-screen bg-gray-50">
-        <!-- Header -->
-        <header class="bg-white shadow-sm border-b border-gray-200">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center h-16">
-                    <div class="flex items-center">
-                        <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center mr-3">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                            </svg>
-                        </div>
-                        <h1 class="text-xl font-semibold text-gray-900">Debt Management Dashboard</h1>
-                    </div>
-                    
-                    <div class="flex items-center space-x-4">
-                        <div class="flex items-center text-sm text-gray-600">
-                            <span class="status-indicator status-active pulse-animation"></span>
-                            <span>Live Data</span>
-                        </div>
-                        <button id="logoutBtn" class="text-gray-600 hover:text-gray-900 transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </header>
+    <!-- DASHBOARD -->
+    <section id="dashboard" class="hidden">
+      <header class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-4">
+          <div class="p-3 rounded-lg bg-gradient-to-br from-indigo-600 to-blue-500 text-white shadow-lg">
+            <!-- icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v4a1 1 0 001 1h3m10-6v4a1 1 0 01-1 1h-3m-6 6h6" />
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-xl font-semibold text-slate-800">Live Finance Dashboard</h1>
+            <p class="text-sm text-slate-500">Connected to Google Sheets — range <span id="rangeLabel" class="font-medium">A17:B22</span></p>
+          </div>
+        </div>
 
-        <!-- Main Content -->
-        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <!-- Stats Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                <div class="bg-white rounded-xl card-shadow p-6 slide-in">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-600">Total Debtors</p>
-                            <p id="totalDebtors" class="text-3xl font-bold text-gray-900">--</p>
-                        </div>
-                        <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-xl card-shadow p-6 slide-in">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-600">Total Amount Owed</p>
-                            <p id="totalAmount" class="text-3xl font-bold text-gray-900">--</p>
-                        </div>
-                        <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-xl card-shadow p-6 slide-in">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-600">Last Updated</p>
-                            <p id="lastUpdated" class="text-lg font-semibold text-gray-900">--</p>
-                        </div>
-                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
+        <div class="flex items-center gap-4">
+          <div id="liveIndicator" class="flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 shadow">
+            <span id="liveDot" class="h-3 w-3 rounded-full bg-gray-300"></span>
+            <div id="liveText" class="text-sm text-slate-600">Disconnected</div>
+          </div>
+          <button id="logoutBtn" class="px-3 py-2 rounded-md bg-white border hover:shadow">Logout</button>
+        </div>
+      </header>
+
+      <main>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div class="md:col-span-2 bg-white rounded-2xl p-4 shadow">
+            <div class="flex items-center justify-between mb-3">
+              <h2 class="text-lg font-semibold text-slate-800">Name & Amount</h2>
+              <div class="text-xs text-slate-500">Last: <span id="lastUpdated">—</span></div>
             </div>
 
-            <!-- Debt Records Table -->
-            <div class="bg-white rounded-xl card-shadow overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h2 class="text-lg font-semibold text-gray-900">Debt Records</h2>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 text-center">
-                        <thead class="bg-gray-50" id="debtTableHead">
-                            <!-- Names will be injected here -->
-                        </thead>
-                        <tbody id="debtTableBody" class="bg-white divide-y divide-gray-200">
-                            <!-- Amounts will be injected here -->
-                        </tbody>
-                        <tfoot class="bg-gray-100">
-                            <tr id="grandTotalRow">
-                                <!-- Grand total will be injected here -->
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
+            <div class="overflow-x-auto">
+              <table id="dataTable" class="min-w-full text-left table-auto">
+                <thead>
+                  <tr class="text-sm text-slate-500 border-b">
+                    <th class="py-2 px-3">Name</th>
+                    <th class="py-2 px-3">Amount</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody">
+                  <tr><td colspan="2" class="py-6 text-center text-slate-500">No data available</td></tr>
+                </tbody>
+                <tfoot id="tableFoot" style="display:none">
+                  <tr class="border-t">
+                    <td class="py-3 px-3 font-semibold">Total</td>
+                    <td id="totalCell" class="py-3 px-3 text-right font-semibold"></td>
+                  </tr>
+                </tfoot>
+              </table>
             </div>
-        </main>
-    </div>
 
-    <script>
-        // Authentication system
-        const VALID_CREDENTIALS = {
-            username: 'admin',
-            password: 'dashboard123'
-        };
+            <div id="connError" class="mt-3 text-sm text-red-600" style="display:none"></div>
+            <div id="connUrl" class="mt-3 text-xs text-slate-400" style="display:none">Connected via: <code id="connUrlCode" class="bg-slate-100 px-2 py-1 rounded"></code></div>
+          </div>
 
-        // Google Sheets configuration (no API key needed!)
-        const SHEET_CONFIG = {
-            sheetId: '1F70kpbSp7tOQ5QLGnn-HLTxQlbT7X5aoK1hu2V8hEW4', // Your actual Sheet ID
-            sheetName: 'Sheet1' // Change this if your sheet has a different name
-        };
+          <aside class="bg-white rounded-2xl p-4 shadow flex flex-col gap-3">
+            <div>
+              <h3 class="text-sm text-slate-600">Status</h3>
+              <p id="statusSmall" class="text-sm text-slate-800 mt-1">Waiting for connection…</p>
+            </div>
 
-        // Global variables
-        let refreshInterval;
-        let debtData = [];
-        let isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            <div>
+              <h3 class="text-sm text-slate-600">Settings</h3>
+              <p class="text-xs text-slate-500 mt-1">Auto-refresh: <span class="font-medium">3s</span></p>
+            </div>
 
-        // DOM elements
-        const loginPage = document.getElementById('loginPage');
-        const dashboardPage = document.getElementById('dashboardPage');
-        const loginForm = document.getElementById('loginForm');
-        const loginError = document.getElementById('loginError');
-        const logoutBtn = document.getElementById('logoutBtn');
+            <div>
+              <h3 class="text-sm text-slate-600">Info</h3>
+              <p class="text-xs text-slate-500 mt-1">Range: <span id="infoRange">A17:B22</span></p>
+            </div>
+          </aside>
+        </div>
+      </main>
+    </section>
 
-        // Dashboard elements
-        const totalDebtors = document.getElementById('totalDebtors');
-        const totalAmount = document.getElementById('totalAmount');
-        const lastUpdated = document.getElementById('lastUpdated');
-        const debtTableBody = document.getElementById('debtTableBody');
+  </div>
 
-        // Login form handler
-        loginForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+<script>
+/* ----------------- CONFIG ----------------- */
+const SHEET_ID = '1F70kpbSp7tOQ5QLGnn-HLTxQlbT7X5aoK1hu2V8hEW4';
+const GID = '0'; // sheet gid (0 for first sheet)
+const RANGE = 'A17:B22';
+const POLL_INTERVAL_MS = 3000;
+const VALID_USERNAME = 'admin';
+const VALID_PASSWORD = 'debt123';
 
-            if (username === VALID_CREDENTIALS.username && password === VALID_CREDENTIALS.password) {
-                localStorage.setItem('isLoggedIn', 'true');
-                showDashboard();
-            } else {
-                loginError.classList.remove('hidden');
-                document.getElementById('username').value = '';
-                document.getElementById('password').value = '';
-            }
-        });
-
-        // Logout handler
-        logoutBtn.addEventListener('click', function() {
-            localStorage.removeItem('isLoggedIn');
-            dashboardPage.classList.add('hidden');
-            loginPage.classList.remove('hidden');
-            document.getElementById('username').value = '';
-            document.getElementById('password').value = '';
-            loginError.classList.add('hidden');
-            
-            // Clear any intervals
-            if (refreshInterval) {
-                clearInterval(refreshInterval);
-            }
-        });
-
-        // Show dashboard and start data fetching
-        function showDashboard() {
-            loginPage.classList.add('hidden');
-            dashboardPage.classList.remove('hidden');
-            loginError.classList.add('hidden');
-            
-            // Initialize dashboard
-            updateLastUpdated();
-            startDataFetching();
-        }
-
-        // Start automatic data fetching
-        function startDataFetching() {
-            // Initial fetch
-            fetchSheetData();
-            
-            // Set up auto-refresh every 5 seconds
-            if (refreshInterval) clearInterval(refreshInterval);
-            refreshInterval = setInterval(fetchSheetData, 5000);
-        }
-
-async function fetchSheetData() {
-    try {
-        const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_CONFIG.sheetId}/gviz/tq?tqx=out:csv&sheet=${SHEET_CONFIG.sheetName}`;
-        const response = await fetch(csvUrl);
-        const csvText = await response.text();
-
-        // Parse CSV into rows/columns
-        const rows = csvText.split('\n').map(r => {
-            const result = [];
-            let current = '';
-            let inQuotes = false;
-            for (let i = 0; i < r.length; i++) {
-                const char = r[i];
-                if (char === '"') {
-                    inQuotes = !inQuotes;
-                } else if (char === ',' && !inQuotes) {
-                    result.push(current.replace(/"/g, '').trim());
-                    current = '';
-                } else {
-                    current += char;
-                }
-            }
-            result.push(current.replace(/"/g, '').trim());
-            return result;
-        });
-            // First row = names
-            const names = rows[0].filter(n => n.trim() !== '');
-            const groupedData = {};
-
-            // Initialize groups
-            names.forEach(name => groupedData[name] = []);
-
-            // Go through each column and collect amounts (skip blanks)
-            for (let rowIndex = 1; rowIndex < rows.length; rowIndex++) {
-                let rowIsEmpty = true;
-                rows[rowIndex].forEach((value, colIndex) => {
-                    const name = names[colIndex];
-                    if (name && value.trim() !== '') {
-                        const amount = parseFloat(value.replace(/[$,]/g, '')) || 0;
-                        if (!isNaN(amount) && amount > 0) {
-                            groupedData[name].push(amount);
-                            rowIsEmpty = false;
-                        }
-                    }
-                });
-                if (rowIsEmpty) continue;
-            }
-
-            // Convert to debtData array
-            debtData = [];
-            Object.keys(groupedData).forEach(name => {
-                groupedData[name].forEach(amount => {
-                    debtData.push({ name, amount, lastDate: '' });
-                });
-            });
-
-            // ✅ Set Total Debtors count to just the number of names
-            document.getElementById('total-debtors').textContent = names.length;
-
-            updateDashboard();
-            updateLastUpdated();
-
-
- } catch (error) {
-        console.error('Error fetching sheet data:', error);
-        debtTableBody.innerHTML = `
-            <tr>
-                <td colspan="3" class="px-6 py-8 text-center text-red-500">
-                    <svg class="w-12 h-12 mx-auto mb-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                    </svg>
-                    Error loading data from Google Sheets.
-                </td>
-            </tr>
-        `;
-    }
+/* ----------------- UTILITIES ----------------- */
+const nf = new Intl.NumberFormat();
+function formatNumberMaybe(val){
+  if (val === null || val === undefined || val === '') return '';
+  const num = Number(String(val).toString().replace(/,/g, '').trim());
+  if (Number.isFinite(num)) return nf.format(num);
+  return String(val);
 }
 
+function buildCsvUrls(sheetId, gid, range){
+  const encodedRange = encodeURIComponent(range);
+  return [
+    `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&range=${encodedRange}&gid=${gid}`,
+    `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}&range=${encodedRange}`,
+    `https://docs.google.com/spreadsheets/d/${sheetId}/pub?output=csv&gid=${gid}&range=${encodedRange}`
+  ];
+}
 
+/* Minimal CSV parser (supports quoted fields) */
+function parseCsv(text){
+  const rows = [];
+  let i=0, cur='', row=[], inQuotes=false;
+  while(i<text.length){
+    const ch = text[i];
+    if (inQuotes){
+      if (ch === '"'){
+        if (i+1 < text.length && text[i+1] === '"'){ cur += '"'; i+=2; continue; }
+        inQuotes = false; i++; continue;
+      } else { cur += ch; i++; continue; }
+    }
+    if (ch === '"'){ inQuotes = true; i++; continue; }
+    if (ch === ','){ row.push(cur); cur=''; i++; continue; }
+    if (ch === '\r'){ i++; continue; }
+    if (ch === '\n'){ row.push(cur); rows.push(row); row=[]; cur=''; i++; continue; }
+    cur += ch; i++;
+  }
+  if (cur !== '' || row.length>0){ row.push(cur); rows.push(row); }
+  return rows;
+}
 
+/* Fetch CSV with fallbacks */
+async function fetchCsvWithFallbacks(urls){
+  let lastErr = null;
+  for (const url of urls){
+    try{
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP '+res.status);
+      const text = await res.text();
+      if (!text || text.trim().length === 0) throw new Error('Empty response');
+      return { url, text };
+    }catch(err){ lastErr = err; }
+  }
+  throw lastErr || new Error('All fallbacks failed');
+}
 
-        // Update dashboard with current data
-        function updateDashboard() {
-            const currentDate = new Date();
-            let totalDebtorsCount = debtData.length;
-            let totalAmountValue = 0;
+/* ----------------- APP STATE ----------------- */
+let pollInterval = null;
+let controller = null;
+let connectedUrl = null;
 
-            // Calculate totals and overdue count
-            debtData.forEach(debt => {
-                totalAmountValue += debt.amount;
-            });
+/* ----------------- DOM Helpers ----------------- */
+const loginEl = document.getElementById('login');
+const dashboardEl = document.getElementById('dashboard');
+const loginForm = document.getElementById('loginForm');
+const authError = document.getElementById('authError');
+const tableBody = document.getElementById('tableBody');
+const tableFoot = document.getElementById('tableFoot');
+const totalCell = document.getElementById('totalCell');
+const lastUpdatedEl = document.getElementById('lastUpdated');
+const liveDot = document.getElementById('liveDot');
+const liveText = document.getElementById('liveText');
+const connError = document.getElementById('connError');
+const connUrl = document.getElementById('connUrl');
+const connUrlCode = document.getElementById('connUrlCode');
+const statusSmall = document.getElementById('statusSmall');
+const logoutBtn = document.getElementById('logoutBtn');
 
-            // Update stats cards with smooth animation
-            animateNumber(totalDebtors, totalDebtorsCount);
-            animateNumber(totalAmount, totalAmountValue, '$');
+// show range labels
+document.getElementById('rangeLabel').innerText = RANGE;
+document.getElementById('infoRange').innerText = RANGE;
 
-            // Update table
-            updateTable();
-        }
+/* ----------------- AUTH ----------------- */
+loginForm.addEventListener('submit', function(e){
+  e.preventDefault();
+  const u = document.getElementById('username').value.trim();
+  const p = document.getElementById('password').value;
+  authError.style.display = 'none';
+  if (u === VALID_USERNAME && p === VALID_PASSWORD){
+    // show dashboard
+    loginEl.classList.add('hidden');
+    dashboardEl.classList.remove('hidden');
+    startPolling();
+  } else {
+    authError.innerText = 'Invalid username or password.';
+    authError.style.display = 'block';
+  }
+});
 
-        // Animate number changes
-        function animateNumber(element, newValue, prefix = '') {
-            const currentValue = parseInt(element.textContent.replace(/[^0-9]/g, '')) || 0;
-            if (currentValue !== newValue) {
-                element.style.transform = 'scale(1.1)';
-                element.style.color = '#10b981';
-                setTimeout(() => {
-                    element.textContent = prefix + newValue.toLocaleString();
-                    element.style.transform = 'scale(1)';
-                    element.style.color = '';
-                }, 200);
-            }
-        }
+logoutBtn.addEventListener('click', function(){
+  stopPolling();
+  dashboardEl.classList.add('hidden');
+  loginEl.classList.remove('hidden');
+});
 
-function updateTable() {
-    if (debtData.length === 0) {
-        debtTableHead.innerHTML = `<tr><th class="px-6 py-3 text-sm text-gray-500">No Data</th></tr>`;
-        debtTableBody.innerHTML = "";
-        grandTotalRow.innerHTML = "";
-        return;
+/* ----------------- POLLING & RENDER ----------------- */
+function setLive(connected){
+  if (connected){
+    liveDot.classList.remove('bg-gray-300');
+    liveDot.classList.add('bg-green-400');
+    liveText.innerText = 'Live';
+    statusSmall.innerText = 'Receiving live updates.';
+  } else {
+    liveDot.classList.remove('bg-green-400');
+    liveDot.classList.add('bg-gray-300');
+    liveText.innerText = 'Disconnected';
+    statusSmall.innerText = 'Disconnected or no data.';
+  }
+}
+
+async function doFetch(){
+  if (!SHEET_ID || SHEET_ID.includes('[your-sheet-id]')){
+    connError.style.display = 'block';
+    connError.innerText = 'Please replace the SHEET_ID placeholder in the script with your sheet id.';
+    setLive(false);
+    renderNoData();
+    return;
+  }
+
+  if (controller) controller.abort();
+  controller = new AbortController();
+  const urls = buildCsvUrls(SHEET_ID, GID, RANGE);
+  try{
+    connError.style.display = 'none';
+    const { url, text } = await fetchCsvWithFallbacks(urls);
+    connectedUrl = url;
+    connUrl.style.display = 'block';
+    connUrlCode.innerText = url;
+    setLive(true);
+    lastUpdatedEl.innerText = new Date().toLocaleString();
+
+    const parsed = parseCsv(text);
+    const processed = [];
+    for (const r of parsed){
+      if (!r || r.length === 0) continue;
+      const name = (r[0] || '').trim();
+      const amountRaw = (r[1] || '').trim();
+      if (!name && !amountRaw) continue;
+      processed.push({ name, amountRaw });
+    }
+    // header detection
+    if (processed.length > 0){
+      const first = processed[0];
+      if (String(first.name).toLowerCase().includes('name') || String(first.amountRaw).toLowerCase().includes('amount')) processed.shift();
     }
 
-    // Group data by name
-    const grouped = {};
-    debtData.forEach(d => {
-        if (!grouped[d.name]) grouped[d.name] = [];
-        grouped[d.name].push(d.amount);
+    const finalRows = processed.map(r => {
+      const cleaned = (r.amountRaw || '').replace(/[^0-9.\-+,]/g, '').replace(/,/g, '');
+      const num = Number(cleaned);
+      return { name: r.name || '', amountRaw: r.amountRaw || '', amount: Number.isFinite(num) ? num : null };
     });
 
-    const names = Object.keys(grouped);
-    const maxRows = Math.max(...names.map(n => grouped[n].length));
-
-    // Create table head (names)
-    debtTableHead.innerHTML = `<tr>${names.map(n => 
-        `<th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">${n}</th>`
-    ).join('')}</tr>`;
-
-    // Create rows for each amount entry
-    let bodyHTML = "";
-    for (let row = 0; row < maxRows; row++) {
-        bodyHTML += `<tr>${names.map(n => {
-            const val = grouped[n][row] !== undefined ? `$${grouped[n][row].toLocaleString()}` : "";
-            return `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${val}</td>`;
-        }).join('')}</tr>`;
-    }
-
-    // Add totals row for each person
-    bodyHTML += `<tr class="bg-gray-50 font-bold">${names.map(n => {
-        const total = grouped[n].reduce((a,b) => a+b, 0);
-        return `<td class="px-6 py-4 whitespace-nowrap text-sm text-indigo-600">$${total.toLocaleString()}</td>`;
-    }).join('')}</tr>`;
-
-    debtTableBody.innerHTML = bodyHTML;
-
-    // Grand total row
-    const grandTotal = Object.values(grouped).flat().reduce((a,b) => a+b, 0);
-    grandTotalRow.innerHTML = `<td colspan="${names.length}" class="px-6 py-4 font-bold text-green-600 text-lg">Grand Total: $${grandTotal.toLocaleString()}</td>`;
+    renderRows(finalRows);
+  }catch(err){
+    connectedUrl = null;
+    connUrl.style.display = 'none';
+    connError.style.display = 'block';
+    connError.innerText = 'Connection error: '+(err.message || err);
+    setLive(false);
+    renderNoData();
+  }
 }
 
+function renderRows(rows){
+  tableBody.innerHTML = '';
+  if (!rows || rows.length === 0){
+    renderNoData();
+    return;
+  }
+  let total = 0;
+  rows.forEach((r, idx) =>{
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-slate-50 transition';
+    const td1 = document.createElement('td'); td1.className='py-3 px-3 text-slate-700'; td1.innerText = r.name || '—';
+    const td2 = document.createElement('td'); td2.className='py-3 px-3 text-right font-medium'; td2.innerText = r.amount !== null ? formatNumberMaybe(r.amount) : formatNumberMaybe(r.amountRaw);
+    tr.appendChild(td1); tr.appendChild(td2);
+    tableBody.appendChild(tr);
+    if (Number.isFinite(r.amount)) total += r.amount;
+  });
+  totalCell.innerText = formatNumberMaybe(total);
+  tableFoot.style.display = 'table-footer-group';
+}
 
+function renderNoData(){
+  tableBody.innerHTML = '<tr><td colspan="2" class="py-6 text-center text-slate-500">No data available</td></tr>';
+  tableFoot.style.display = 'none';
+  totalCell.innerText = '';
+}
 
+function startPolling(){
+  // immediate
+  doFetch();
+  if (pollInterval) clearInterval(pollInterval);
+  pollInterval = setInterval(doFetch, POLL_INTERVAL_MS);
+}
+function stopPolling(){
+  if (pollInterval) clearInterval(pollInterval);
+  pollInterval = null;
+  if (controller) controller.abort();
+  controller = null;
+  setLive(false);
+}
 
-        // Update last updated timestamp
-        function updateLastUpdated() {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString('en-US', { 
-                hour: '2-digit', 
-                minute: '2-digit',
-                hour12: true 
-            });
-            lastUpdated.textContent = timeString;
-        }
+/* ----------------- Basic client-side security: prevent right-click & F12 ----------------- */
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+  if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'i')){
+    e.preventDefault();
+  }
+});
 
-        // Initialize the application
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check if user is already logged in
-            if (isLoggedIn) {
-                showDashboard();
-            } else {
-                // Focus on username field
-                document.getElementById('username').focus();
-            }
-        });
-    </script>
+/* If user navigates away, clean up */
+window.addEventListener('beforeunload', () => { stopPolling(); });
+</script>
+
 </body>
 </html>
