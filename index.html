@@ -291,7 +291,7 @@
 
         async function fetchSheetData() {
     try {
-        const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_CONFIG.sheetId}/gviz/tq?tqx=out:csv&sheet=${SHEET_CONFIG.sheetName}`;
+        const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_CONFIG.sheetId}/gviz/tq?tqx=out:csv&sheet=${SHEET_CONFIG.sheetName}&range=A17:B22`;
         const response = await fetch(csvUrl);
         const csvText = await response.text();
 
@@ -480,3 +480,4 @@ function updateTable() {
     </script>
 </body>
 </html>
+
