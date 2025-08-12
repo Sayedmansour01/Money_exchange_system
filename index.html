@@ -123,7 +123,7 @@
         <!-- Main Content -->
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Stats Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 <div class="bg-white rounded-xl card-shadow p-6 slide-in">
                     <div class="flex items-center justify-between">
                         <div>
@@ -152,19 +152,6 @@
                     </div>
                 </div>
                 
-                <div class="bg-white rounded-xl card-shadow p-6 slide-in">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-600">Overdue (>30 days)</p>
-                            <p id="overdueCount" class="text-3xl font-bold text-gray-900">--</p>
-                        </div>
-                        <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
                 
                 <div class="bg-white rounded-xl card-shadow p-6 slide-in">
                     <div class="flex items-center justify-between">
@@ -206,280 +193,141 @@
     </div>
 
     <script>
-        // Authentication system
-        const VALID_CREDENTIALS = {
-            username: 'admin',
-            password: 'dashboard123'
-        };
+        // Simple credentials
+const VALID_CREDENTIALS = { username: 'admin', password: 'dashboard123' };
 
-        // Google Sheets configuration (no API key needed!)
-        const SHEET_CONFIG = {
-            sheetId: '1F70kpbSp7tOQ5QLGnn-HLTxQlbT7X5aoK1hu2V8hEW4', // Your actual Sheet ID
-            sheetName: 'Sheet1' // Change this if your sheet has a different name
-        };
+// Google Sheets config
+const SHEET_CSV_URL = 'https://script.google.com/macros/s/AKfycbxnjJNTt5rQEcVFTkI3xjZFVQ6qDPYaO1qNqM9-jYZRn2c4xqydu1gleQfL4zsDY_eM/exec';
 
-        // Global variables
-        let refreshInterval;
-        let debtData = [];
-        let isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+// State
+let refreshInterval;
+let debtData = [];
+let isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
 
-        // DOM elements
-        const loginPage = document.getElementById('loginPage');
-        const dashboardPage = document.getElementById('dashboardPage');
-        const loginForm = document.getElementById('loginForm');
-        const loginError = document.getElementById('loginError');
-        const logoutBtn = document.getElementById('logoutBtn');
+// Elements
+const loginPage = document.getElementById('loginPage');
+const dashboardPage = document.getElementById('dashboardPage');
+const loginForm = document.getElementById('loginForm');
+const loginError = document.getElementById('loginError');
+const logoutBtn = document.getElementById('logoutBtn');
+const totalDebtors = document.getElementById('totalDebtors');
+const totalAmount = document.getElementById('totalAmount');
+const lastUpdated = document.getElementById('lastUpdated');
+const debtTableHead = document.getElementById('debtTableHead');
+const debtTableBody = document.getElementById('debtTableBody');
+const grandTotalRow = document.getElementById('grandTotalRow');
 
-        // Dashboard elements
-        const totalDebtors = document.getElementById('totalDebtors');
-        const totalAmount = document.getElementById('totalAmount');
-        const overdueCount = document.getElementById('overdueCount');
-        const lastUpdated = document.getElementById('lastUpdated');
-        const debtTableBody = document.getElementById('debtTableBody');
+// Login
+loginForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const u = document.getElementById('username').value;
+    const p = document.getElementById('password').value;
+    if (u === VALID_CREDENTIALS.username && p === VALID_CREDENTIALS.password) {
+        localStorage.setItem('isLoggedIn', 'true');
+        showDashboard();
+    } else {
+        loginError.classList.remove('hidden');
+        loginForm.reset();
+    }
+});
 
-        // Login form handler
-        loginForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+// Logout
+logoutBtn.addEventListener('click', () => {
+    localStorage.removeItem('isLoggedIn');
+    dashboardPage.classList.add('hidden');
+    loginPage.classList.remove('hidden');
+    loginError.classList.add('hidden');
+    if (refreshInterval) clearInterval(refreshInterval);
+});
 
-            if (username === VALID_CREDENTIALS.username && password === VALID_CREDENTIALS.password) {
-                localStorage.setItem('isLoggedIn', 'true');
-                showDashboard();
-            } else {
-                loginError.classList.remove('hidden');
-                document.getElementById('username').value = '';
-                document.getElementById('password').value = '';
-            }
-        });
+// Show dashboard
+function showDashboard() {
+    loginPage.classList.add('hidden');
+    dashboardPage.classList.remove('hidden');
+    loginError.classList.add('hidden');
+    updateLastUpdated();
+    startDataFetching();
+}
 
-        // Logout handler
-        logoutBtn.addEventListener('click', function() {
-            localStorage.removeItem('isLoggedIn');
-            dashboardPage.classList.add('hidden');
-            loginPage.classList.remove('hidden');
-            document.getElementById('username').value = '';
-            document.getElementById('password').value = '';
-            loginError.classList.add('hidden');
-            
-            // Clear any intervals
-            if (refreshInterval) {
-                clearInterval(refreshInterval);
-            }
-        });
+// Auto-fetch every 5s
+function startDataFetching() {
+    fetchSheetData();
+    if (refreshInterval) clearInterval(refreshInterval);
+    refreshInterval = setInterval(fetchSheetData, 5000);
+}
 
-        // Show dashboard and start data fetching
-        function showDashboard() {
-            loginPage.classList.add('hidden');
-            dashboardPage.classList.remove('hidden');
-            loginError.classList.add('hidden');
-            
-            // Initialize dashboard
-            updateLastUpdated();
-            startDataFetching();
-        }
-
-        // Start automatic data fetching
-        function startDataFetching() {
-            // Initial fetch
-            fetchSheetData();
-            
-            // Set up auto-refresh every 5 seconds
-            if (refreshInterval) clearInterval(refreshInterval);
-            refreshInterval = setInterval(fetchSheetData, 5000);
-        }
-
-        async function fetchSheetData() {
+// Fetch and parse CSV
+async function fetchSheetData() {
     try {
-        const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_CONFIG.sheetId}/gviz/tq?tqx=out:csv&sheet=${SHEET_CONFIG.sheetName}&range=A18:B21`;
-        const response = await fetch(csvUrl);
+        const response = await fetch(SHEET_CSV_URL);
         const csvText = await response.text();
+        const rows = csvText.trim().split('\n').map(r => r.split(','));
 
-        // Parse CSV into rows/columns
-        const rows = csvText.split('\n').map(r => {
-            const result = [];
-            let current = '';
-            let inQuotes = false;
-            for (let i = 0; i < r.length; i++) {
-                const char = r[i];
-                if (char === '"') {
-                    inQuotes = !inQuotes;
-                } else if (char === ',' && !inQuotes) {
-                    result.push(current.replace(/"/g, '').trim());
-                    current = '';
-                } else {
-                    current += char;
-                }
-            }
-            result.push(current.replace(/"/g, '').trim());
-            return result;
-        });
-
-        // First row = names
-        const names = rows[0].filter(n => n.trim() !== '');
-        const groupedData = {};
-
-        // Initialize groups
-        names.forEach(name => groupedData[name] = []);
-
-        // Go through each column and collect amounts (skip blanks)
-        for (let rowIndex = 1; rowIndex < rows.length; rowIndex++) {
-            let rowIsEmpty = true;
-            rows[rowIndex].forEach((value, colIndex) => {
-                const name = names[colIndex];
-                if (name && value.trim() !== '') {
-                    const amount = parseFloat(value.replace(/[$,]/g, '')) || 0;
-                    if (!isNaN(amount) && amount > 0) {
-                        groupedData[name].push(amount);
-                        rowIsEmpty = false;
-                    }
-                }
-            });
-            // Skip the row entirely if it had no valid amounts
-            if (rowIsEmpty) continue;
-        }
-
-        // Convert to debtData array
-        debtData = [];
-        Object.keys(groupedData).forEach(name => {
-            groupedData[name].forEach(amount => {
-                debtData.push({ name, amount, lastDate: '' });
-            });
-        });
+        // Remove header row and map into objects
+        debtData = rows.slice(1).map(r => ({
+            name: r[0].trim(),
+            amount: parseFloat(r[1].replace(/[$,]/g, '')) || 0,
+            lastDate: ''
+        }));
 
         updateDashboard();
         updateLastUpdated();
-
     } catch (error) {
         console.error('Error fetching sheet data:', error);
-        debtTableBody.innerHTML = `
-            <tr>
-                <td colspan="3" class="px-6 py-8 text-center text-red-500">
-                    <svg class="w-12 h-12 mx-auto mb-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                    </svg>
-                    Error loading data from Google Sheets.
-                </td>
-            </tr>
-        `;
+        debtTableBody.innerHTML = `<tr><td colspan="2" class="text-center text-red-500">Error loading data</td></tr>`;
     }
 }
 
 
+// Update dashboard stats + table
+function updateDashboard() {
+    let totalAmountValue = 0;
+    debtData.forEach(debt => {
+        totalAmountValue += debt.amount;
+    });
+    animateNumber(totalDebtors, debtData.length);
+    animateNumber(totalAmount, totalAmountValue, '$');
+    updateTable();
+}
 
+// Animate counter
+function animateNumber(element, newValue, prefix = '') {
+    element.textContent = prefix + newValue.toLocaleString();
+}
 
-        // Update dashboard with current data
-        function updateDashboard() {
-            const currentDate = new Date();
-            let totalDebtorsCount = debtData.length;
-            let totalAmountValue = 0;
-            let overdueCountValue = 0;
-
-            // Calculate totals and overdue count
-            debtData.forEach(debt => {
-                totalAmountValue += debt.amount;
-                const lastDate = new Date(debt.lastDate);
-                const daysDiff = Math.floor((currentDate - lastDate) / (1000 * 60 * 60 * 24));
-                if (daysDiff > 30) {
-                    overdueCountValue++;
-                }
-            });
-
-            // Update stats cards with smooth animation
-            animateNumber(totalDebtors, totalDebtorsCount);
-            animateNumber(totalAmount, totalAmountValue, '$');
-            animateNumber(overdueCount, overdueCountValue);
-
-            // Update table
-            updateTable();
-        }
-
-        // Animate number changes
-        function animateNumber(element, newValue, prefix = '') {
-            const currentValue = parseInt(element.textContent.replace(/[^0-9]/g, '')) || 0;
-            if (currentValue !== newValue) {
-                element.style.transform = 'scale(1.1)';
-                element.style.color = '#10b981';
-                setTimeout(() => {
-                    element.textContent = prefix + newValue.toLocaleString();
-                    element.style.transform = 'scale(1)';
-                    element.style.color = '';
-                }, 200);
-            }
-        }
-
+// Table rendering
 function updateTable() {
     if (debtData.length === 0) {
-        debtTableHead.innerHTML = `<tr><th class="px-6 py-3 text-sm text-gray-500">No Data</th></tr>`;
+        debtTableHead.innerHTML = `<tr><th>No Data</th></tr>`;
         debtTableBody.innerHTML = "";
         grandTotalRow.innerHTML = "";
         return;
     }
 
-    // Group data by name
-    const grouped = {};
+    debtTableHead.innerHTML = `<tr><th>Name</th><th>Amount</th></tr>`;
+    let bodyHTML = "";
+    let totalAmount = 0;
+
     debtData.forEach(d => {
-        if (!grouped[d.name]) grouped[d.name] = [];
-        grouped[d.name].push(d.amount);
+        bodyHTML += `<tr><td>${d.name}</td><td>$${d.amount.toLocaleString()}</td></tr>`;
+        totalAmount += d.amount;
     });
 
-    const names = Object.keys(grouped);
-    const maxRows = Math.max(...names.map(n => grouped[n].length));
-
-    // Create table head (names)
-    debtTableHead.innerHTML = `<tr>${names.map(n => 
-        `<th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">${n}</th>`
-    ).join('')}</tr>`;
-
-    // Create rows for each amount entry
-    let bodyHTML = "";
-    for (let row = 0; row < maxRows; row++) {
-        bodyHTML += `<tr>${names.map(n => {
-            const val = grouped[n][row] !== undefined ? `$${grouped[n][row].toLocaleString()}` : "";
-            return `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${val}</td>`;
-        }).join('')}</tr>`;
-    }
-
-    // Add totals row for each person
-    bodyHTML += `<tr class="bg-gray-50 font-bold">${names.map(n => {
-        const total = grouped[n].reduce((a,b) => a+b, 0);
-        return `<td class="px-6 py-4 whitespace-nowrap text-sm text-indigo-600">$${total.toLocaleString()}</td>`;
-    }).join('')}</tr>`;
-
     debtTableBody.innerHTML = bodyHTML;
-
-    // Grand total row
-    const grandTotal = Object.values(grouped).flat().reduce((a,b) => a+b, 0);
-    grandTotalRow.innerHTML = `<td colspan="${names.length}" class="px-6 py-4 font-bold text-green-600 text-lg">Grand Total: $${grandTotal.toLocaleString()}</td>`;
+    grandTotalRow.innerHTML = `<td colspan="2">Grand Total: $${totalAmount.toLocaleString()}</td>`;
 }
 
 
+// Last updated clock
+function updateLastUpdated() {
+    lastUpdated.textContent = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
 
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+    if (isLoggedIn) showDashboard();
+});
 
-        // Update last updated timestamp
-        function updateLastUpdated() {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString('en-US', { 
-                hour: '2-digit', 
-                minute: '2-digit',
-                hour12: true 
-            });
-            lastUpdated.textContent = timeString;
-        }
-
-        // Initialize the application
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check if user is already logged in
-            if (isLoggedIn) {
-                showDashboard();
-            } else {
-                // Focus on username field
-                document.getElementById('username').focus();
-            }
-        });
     </script>
 </body>
 </html>
-
-
-
